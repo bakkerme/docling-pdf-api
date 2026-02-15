@@ -1,0 +1,9 @@
+services:
+  docling-pdf-api:
+    build:
+      context: .
+      target: cpu
+    image: docling-pdf-api:cpu
+    ports:
+      - "8000:8000"
+    restart: unless-stopped

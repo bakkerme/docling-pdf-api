@@ -1,0 +1,88 @@
+name: Publish Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (X.Y.Z or vX.Y.Z)"
+        required: true
+        type: string
+      publish_latest:
+        description: "Also publish latest-cpu and latest-nvidia"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute tags
+        id: prep
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          PUBLISH_LATEST: ${{ github.event.inputs.publish_latest }}
+          IMAGE_BASE: ghcr.io/${{ github.repository_owner }}/docling-pdf-api
+        run: |
+          set -euo pipefail
+
+          VERSION="${INPUT_VERSION#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version: $INPUT_VERSION. Expected X.Y.Z or vX.Y.Z" >&2
+            exit 1
+          fi
+
+          SHORT_SHA="${GITHUB_SHA::7}"
+
+          CPU_TAGS="${IMAGE_BASE}:${VERSION}-cpu,${IMAGE_BASE}:${SHORT_SHA}-cpu"
+          NVIDIA_TAGS="${IMAGE_BASE}:${VERSION}-nvidia,${IMAGE_BASE}:${SHORT_SHA}-nvidia"
+
+          if [[ "${PUBLISH_LATEST}" == "true" ]]; then
+            CPU_TAGS="${CPU_TAGS},${IMAGE_BASE}:latest-cpu"
+            NVIDIA_TAGS="${NVIDIA_TAGS},${IMAGE_BASE}:latest-nvidia"
+          fi
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "cpu_tags=${CPU_TAGS}" >> "$GITHUB_OUTPUT"
+          echo "nvidia_tags=${NVIDIA_TAGS}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push CPU image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: cpu
+          push: true
+          tags: ${{ steps.prep.outputs.cpu_tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.prep.outputs.version }}
+
+      - name: Build and push NVIDIA image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: nvidia
+          push: true
+          tags: ${{ steps.prep.outputs.nvidia_tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.prep.outputs.version }}

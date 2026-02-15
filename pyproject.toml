@@ -1,0 +1,20 @@
+[project]
+name = "docling-pdf-api"
+version = "0.1.0"
+description = "Simple containerized Docling PDF conversion runner"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "docling>=2.0.0",
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
