@@ -27,10 +27,22 @@ Successful responses are raw Markdown with `Content-Type: text/markdown`.
 docker build --target cpu -t docling-pdf-api:cpu .
 ```
 
+Build CPU image specifically for aarch64 (`linux/arm64`):
+
+```bash
+docker buildx build --platform linux/arm64 --target cpu -t docling-pdf-api:cpu-arm64 .
+```
+
 ### NVIDIA image (Grace Blackwell / GPU hosts)
 
 ```bash
 docker build --target nvidia -t docling-pdf-api:nvidia .
+```
+
+Build NVIDIA image for aarch64 (`linux/arm64`):
+
+```bash
+docker buildx build --platform linux/arm64 --target nvidia -t docling-pdf-api:nvidia-arm64 .
 ```
 
 Default NVIDIA base image is pinned in `Dockerfile`:
@@ -89,6 +101,11 @@ Manual publish workflow: `.github/workflows/publish.yml`
   - `<version>-nvidia`
   - `<shortsha>-nvidia`
   - `latest-nvidia` (when `publish_latest=true`)
+
+Architecture support in CI publish workflow:
+
+- CPU image: multi-arch manifest for `linux/amd64` and `linux/arm64` (aarch64)
+- NVIDIA image: `linux/arm64` (aarch64)
 
 Example pulls:
 
