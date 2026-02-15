@@ -30,7 +30,7 @@ WORKDIR /app
 EXPOSE 8000
 
 COPY pyproject.toml README.md ./
-COPY app.py main.py ./
+COPY app.py ./
 
 RUN python -m pip install --upgrade pip setuptools wheel && \
     python -m pip install .
