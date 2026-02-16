@@ -35,4 +35,8 @@ COPY app.py ./
 RUN python -m pip install --upgrade pip setuptools wheel && \
     python -m pip install .
 
+RUN apt update && apt install -y \
+    build-essential \
+    libxcb1 libgl1 libglib2.0-0
+
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
